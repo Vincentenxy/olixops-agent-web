@@ -1,12 +1,12 @@
 # olixops-agent-web
 
-`olixops-agent` 的独立 Web 控制台，围绕自然语言需求、部署任务和 Terraform 变更构建操作工作区。
+`olixops-agent` 的独立 Web 控制台，围绕自然语言需求、部署任务和 Pulumi 变更构建操作工作区。
 
-前端采用 React + TypeScript + Vite SPA，后端独立使用 FastAPI。控制台以登录后的交互操作为主，当前无需 SSR；前端交付静态资源，Agent 编排和 Terraform 执行保留在后端。
+前端采用 React + TypeScript + Vite SPA，后端独立使用 FastAPI。控制台以登录后的交互操作为主，当前无需 SSR；前端交付静态资源，Agent 编排和 Pulumi 执行保留在后端。
 
 ## 当前范围
 
-本轮初始化提供中文紧凑工作台、需求草稿、任务未接入空态和连接状态入口。真实任务创建、MCP 查询、Terraform plan/apply 和部署结果尚未接入；“提交部署”保持禁用，健康检查通过也不会启用。
+本轮初始化提供中文紧凑工作台、需求草稿、任务未接入空态和连接状态入口。真实任务创建、MCP 查询、Pulumi preview/up（变更预览/更新）和部署结果尚未接入；“提交部署”保持禁用，健康检查通过也不会启用。
 
 | 路径        | 当前行为                                                                       |
 | ----------- | ------------------------------------------------------------------------------ |
@@ -52,7 +52,7 @@ API_PROXY_TARGET=http://127.0.0.1:8001 pnpm dev
 
 [.env.example](.env.example) 记录这个用法；当前配置直接读取 shell 的 `API_PROXY_TARGET`，复制为 `.env` 不会自动改变代理。代理设置见 [vite.config.ts](vite.config.ts)。页面上的连接入口用于查看状态，不会修改 API 目标。
 
-当前未使用 `VITE_*` 变量或持久化登录 token。以后增加的 `VITE_*` 变量会成为浏览器可读取的公开配置；云密钥、JWT 签名密钥和 Terraform 凭据交给后端管理。API 封装预留内存 token provider，登录来源与会话流程仍待接入。
+当前未使用 `VITE_*` 变量或持久化登录 token。以后增加的 `VITE_*` 变量会成为浏览器可读取的公开配置；云密钥、JWT 签名密钥和 Pulumi 凭据交给后端管理。API 封装预留内存 token provider，登录来源与会话流程仍待接入。
 
 ## 构建与验证
 
@@ -75,7 +75,7 @@ API_PROXY_TARGET=http://127.0.0.1:8001 pnpm dev
 
 - 已提供 [Dockerfile](Dockerfile)，使用 Node 构建、Nginx 托管；[Nginx 配置](deploy/nginx.conf) 对页面路径提供 `index.html` 回退，`/assets/` 使用静态资源缓存。
 - 容器的 `/healthz` 只验证静态站点可用。当前 `/api/` 固定返回统一 HTTP 503，等待环境配置真实反向代理；API 路径不会被 SPA 回退吞成 HTML。
-- 生产 API 的同源反向代理与集群入口由部署配置确定；构建前端不会启动 FastAPI、Agent 或 Terraform Worker。
+- 生产 API 的同源反向代理与集群入口由部署配置确定；构建前端不会启动 FastAPI、Agent 或 Pulumi Worker。
 - 后续接入的 Worker 应在后端持续执行任务；用户关闭页面后，重新进入应通过任务 ID 读取真实进度。
 - Docker 生产代理、集群入口与任务流协议等接入事项记录在 [todo.md](todo.md)。
 

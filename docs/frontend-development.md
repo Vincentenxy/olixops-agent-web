@@ -4,7 +4,7 @@
 
 ## 架构与职责
 
-`olixops-agent-web` 使用 React、TypeScript、Vite 构建 SPA；React Router 负责页面路由，TanStack Query 管理服务端数据，Ant Design 提供控制台组件。后端 `olixops-agent` 独立提供 FastAPI API、Agent 编排与 Terraform Worker。
+`olixops-agent-web` 使用 React、TypeScript、Vite 构建 SPA；React Router 负责页面路由，TanStack Query 管理服务端数据，Ant Design 提供控制台组件。后端 `olixops-agent` 独立提供 FastAPI API，规划接入 Agent 编排与 Pulumi Worker；当前部署能力仍未接入。
 
 这是需要登录、持续查看任务的操作控制台，当前没有搜索引擎索引或服务端渲染页面的需求。SPA 能把静态资源交付与后端任务执行分开；后续出现明确 SSR 需求时再评估相应框架。
 
@@ -24,7 +24,7 @@
 - 业务路径使用 `/api/v1/...`；`/api/v1/pub/...` 是显式注册的公开接口，其余业务接口携带 `Authorization: Bearer <token>`。
 - 业务方法只使用 GET / POST：带参数使用 POST，不带参数或分享链接使用 GET；GET 保持只读，部署和取消使用 POST。
 - CORS 的 OPTIONS 预检由服务端/网关处理。前端跨域配置必须与实际 API 暴露方式一致。
-- 当前联调入口为 `GET /api/v1/pub/health`。健康检查成功只证明 API 可访问，不代表用户认证、MCP 或 Terraform 已就绪。
+- 当前联调入口为 `GET /api/v1/pub/health`。健康检查成功只证明 API 可访问，不代表用户认证、MCP 或 Pulumi 已就绪。
 
 ### 统一 JSON 响应
 
@@ -51,7 +51,7 @@
 - 后端从 `staffuserid` 和 `name` 解析用户信息。前端需要的用户响应字段由实际 API 显式定义，不依赖原始 token 或 Cookie 回显。
 - 缺少/无效/过期 token 返回统一 HTTP 401；身份有效但无资源权限返回 HTTP 403，两种情况分别处理。
 - 当前 API 封装通过内存 token provider 为受保护接口读取 Bearer token，未接入真实登录来源；公开接口不附加 token。登录、刷新、退出和后续 token 存储策略待真实身份系统接入后确定。
-- 浏览器包、`VITE_*` 变量和构建产物均可被用户读取，仅放公开配置；云凭据、JWT 签名密钥和 Terraform 执行凭据由后端管理。
+- 浏览器包、`VITE_*` 变量和构建产物均可被用户读取，仅放公开配置；云凭据、JWT 签名密钥和 Pulumi 执行凭据由后端管理。
 - 当前请求使用 `credentials: 'omit'`，不发送 Cookie。是否改为携带 Cookie 由最终身份方案决定；启用跨域 Cookie 时同步配置具体允许的 Origin、credentials 和相关服务端行为。
 
 ### 请求追踪
@@ -65,7 +65,8 @@
 - 需求草稿是客户端编辑内容；只有后端返回已创建的任务，才能进入真实任务列表。
 - 后端暂未提供任务接口时，展示未连接状态或空态；空列表不能推断为任务查询成功。
 - 任务状态、步骤、日志游标与重连方式以真实任务协议为准；轮询或 SSE 的选择见 todo。
-- 计划审核状态绑定具体 Terraform plan；是否需要审核按环境授权策略决定。前端只呈现服务端权限和动作，不自行决定 apply 授权。
+- Pulumi preview/up 分别表示变更预览与更新。审核状态绑定部署规格、代码与组件版本、配置、stack 和预览摘要；执行前由后端重新核对，发生变化时按环境策略重新审核。前端只呈现服务端权限和动作，不自行决定 up 授权。
+- Pulumi update plan 不等同于 Terraform 保存计划，不能据此推断审核与执行内容完全一致；详细审核和执行规范见后端 `olixops-agent/README.md` 的“Agent 与 Pulumi 执行规范”。
 - 展示部署成功需要后端确认实际结果；取消请求发出后，应等待后端返回取消或最终状态。
 
 ## 验证与文档维护
