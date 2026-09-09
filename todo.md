@@ -51,3 +51,5 @@
 - 本轮界面验收：1280×720 桌面、390×844 登录与账户页无横向溢出，操作可达；浏览器控制台无 warn/error。
 - 本地容器：PostgreSQL/Redis 实际运行正常；完整应用构建受 Docker Hub 获取 Python 镜像 token 超时影响。使用缓存 Nginx 1.27.5 镜像和本项目实际模板，验证健康检查 200、SPA 路由 200、缺失静态资源 404、不可用 API 上游 502；再代理真实后端完成登录、身份/状态查询、Cookie 刷新、退出及退出后 Bearer/Cookie 均拒绝。临时验证容器已删除。此结果验证模板与代理集成，生产镜像运行以 CI 为准。
 - [首次基础能力 CI](https://github.com/Vincentenxy/olixops-agent-web/actions/runs/34307173544) 的质量检查和生产镜像构建通过，启动健康探测因连接重置返回 curl 56；已为启动探测补充所有错误重试、时间上限和失败日志，后续路径状态断言保留。
+
+- 2026-09-09 安装排查：npm 11.3.0 对现有 `.pnpm` 目录执行离线 dry-run，复现 `Link.matches` 的 null 异常。改用项目固定的 pnpm 10.11.1 执行 `pnpm install --frozen-lockfile --offline` 成功，未删除依赖或修改锁文件；随后 `pnpm check` 的 lint、格式、类型、38 项测试和生产构建全部通过。README 已补充包管理器约定及恢复命令。

@@ -33,6 +33,8 @@
 
 ## 本地启动与登录
 
+本项目统一使用 **pnpm 10.11.1** 安装依赖和执行脚本，锁文件为 `pnpm-lock.yaml`；不要在项目目录混用 `npm install` 或 `yarn install`。先执行 `pnpm --version` 确认版本；尚未安装 pnpm 时，可执行 `npm install -g pnpm@10.11.1` 安装工具，再使用下述 pnpm 命令。
+
 1. 先按后端 `olixops-agent/README.md` 完成数据库迁移、签名密钥和本地用户初始化，并启动 API。当前没有默认公开密码或前端注册入口。
 2. 在前端仓库执行：
 
@@ -52,6 +54,10 @@ API_PROXY_TARGET=http://127.0.0.1:8001 pnpm dev --port 5175 --strictPort
 [.env.example](.env.example) 记录用法；当前 [Vite 配置](vite.config.ts) 读取 shell 变量，复制 `.env` 不会自动改变代理。浏览器地址的 Origin 必须在后端认证允许列表中；本地默认允许 127.0.0.1/localhost 的 5173、5175 端口，其他地址需同步配置后端。代理不改写浏览器 Origin。
 
 `VITE_*`、浏览器包和静态资源均属于公开配置，不能放密码、签名私钥或 Pulumi/云凭据。后端断开时登录或状态检查显示真实错误，不使用模拟登录绕过。
+
+### 安装报错排查
+
+如果误执行 `npm install` 后出现 `Cannot read properties of null (reading 'matches')`，先改用 `pnpm install --frozen-lockfile`，再执行 `pnpm check` 验证依赖和构建。本机 npm 11.3.0 在读取既有 `.pnpm` 链接目录时已复现此错误，使用 pnpm 10.11.1 安装通过。无需为此删除 `pnpm-lock.yaml`、清理全局缓存或升级 Node。
 
 ## 检查与构建
 
