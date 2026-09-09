@@ -17,6 +17,7 @@ import { useConnection } from '../features/connection/useConnection';
 const AccountPage = lazy(() => import('../features/auth/AccountPage'));
 const WorkbenchPage = lazy(() => import('../features/workbench/WorkbenchPage'));
 const TasksPage = lazy(() => import('../features/tasks/TasksPage'));
+const TaskDetailPage = lazy(() => import('../features/agent/TaskDetailPage'));
 const ConnectionPage = lazy(() => import('../features/connection/ConnectionPage'));
 
 function Shell() {
@@ -41,7 +42,7 @@ function Shell() {
           </NavLink>
           <NavLink to="/tasks">
             <UnorderedListOutlined aria-hidden="true" />
-            <span>部署任务</span>
+            <span>方案分析</span>
           </NavLink>
           <NavLink to="/settings">
             <SettingOutlined aria-hidden="true" />
@@ -124,6 +125,7 @@ export default function App() {
         <Route element={<Shell />}>
           <Route index element={<WorkbenchPage />} />
           <Route path="tasks" element={<TasksPage />} />
+          <Route path="tasks/:taskId" element={<TaskDetailPage />} />
           <Route path="account" element={<AccountPage />} />
           <Route path="settings" element={<ConnectionPage />} />
           <Route

@@ -561,6 +561,147 @@ h1 {
 .service-status .ant-tag {
   flex-shrink: 0;
 }
+.analysis-entry,
+.conversation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.analysis-entry {
+  padding-top: 16px;
+  border-top: 1px solid #e9edf3;
+}
+.analysis-entry .field-help,
+.conversation-form .field-help {
+  margin: 0;
+}
+.analysis-actions,
+.conversation-actions,
+.task-context {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.analysis-actions > .field-help {
+  flex: 1;
+  min-width: 130px;
+}
+.analysis-actions > .ant-btn {
+  flex-shrink: 0;
+}
+.task-list,
+.spec-services {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+}
+.task-list {
+  max-height: 60dvh;
+  overflow: auto;
+}
+.task-list > li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid #e9edf3;
+}
+.task-list > li:first-child {
+  padding-top: 0;
+}
+.task-list .ant-tag {
+  flex-shrink: 0;
+  margin-right: 0;
+}
+.task-list-main {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.task-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+.task-detail-grid .panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.conversation {
+  margin: 0;
+  padding: 0 10px 0 0;
+  list-style: none;
+  max-height: 360px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.conversation:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+.conversation-message {
+  padding: 14px 0;
+  border-bottom: 1px solid #edf0f5;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.conversation-message:first-child {
+  padding-top: 0;
+}
+.conversation-message strong {
+  color: #53657f;
+}
+.message-assistant strong {
+  color: #2563eb;
+}
+.conversation-message p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 5px 0 0;
+}
+.question-list {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 180px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+.conversation-form {
+  padding-top: 4px;
+  gap: 20px;
+}
+.conversation-actions {
+  justify-content: space-between;
+}
+.deployment-spec {
+  overflow-wrap: anywhere;
+}
+.spec-services {
+  margin-top: 12px;
+}
+.spec-services > li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 0;
+  border-top: 1px solid #e9edf3;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.spec-services span {
+  color: #617088;
+}
+@media (max-width: 1100px) {
+  .task-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 720px) {
   .workspace-title {
     display: none;

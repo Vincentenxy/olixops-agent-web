@@ -1,6 +1,6 @@
 # 前端开发与接口契约
 
-更新日期：2026-09-09。运行方式见 [README](../README.md)，交互规则见 [UI 开发规范](ui-development-standards.md)，待接入能力见 [todo](../todo.md)。接口以同版本后端 OpenAPI 和 README 为准。
+更新日期：2026-09-10。运行方式见 [README](../README.md)，交互规则见 [UI 开发规范](ui-development-standards.md)，待接入能力见 [todo](../todo.md)。接口以同版本后端 OpenAPI 和 README 为准。
 
 ## 模块与状态
 
@@ -8,7 +8,7 @@
 - `features/auth/session.ts` 负责内存身份、认证请求、恢复/刷新与会话失效；`AuthProvider` 桥接 React 并在会话世代变化时清空 QueryClient。组件不能自行拼接 token 或持久化会话。
 - `lib/api/client.ts` 负责传输、超时/取消、请求 ID 与统一 envelope；受保护请求通过 `session.request` 执行。外部数据需运行时解析，类型断言不能代替验证。
 - 页面编辑状态留在组件，查询缓存按会话世代和用户 ID 分区；URL 表达页面位置。身份变更重新挂载受保护页面，旧请求返回值不进入新会话。
-- 后端已提供 Pulumi 基础集成，Agent 编排和业务 Worker 待接入；页面关闭或请求取消不能推断为部署取消/失败。
+- 后端已提供 Pulumi 基础集成与持久 LangGraph 方案分析；MCP 查询、业务部署 Worker 待接入。页面关闭或请求取消不能推断为分析任务或部署取消/失败。
 
 ## API 传输
 
@@ -68,14 +68,45 @@ HTTP 200 仍必须检查 `code`；非 JSON、无效 envelope、结构不匹配�
 
 数据库/Pulumi 状态为 `ok` 或 `error`，Redis 还允许 `disabled`，CLI 不可用时 `cli_version` 为 `null`。页面仅展示真实响应；服务检查通过不等于 Agent/MCP 或部署任务可执行。`GET /api/v1/pub/health` 仍保留给健康探针。
 
+## Agent 方案分析
+
+所有 Agent 接口均需要认证，通过 `auth.session.request` 使用统一响应。任务是一段持久分析会话，不是部署记录；前端入口在工作台，列表位于 `/tasks`，详情位于 `/tasks/:taskId`。
+
+| 方法 / 路径                        | 请求                                                                | 成功 `data`                           |
+| ---------------------------------- | ------------------------------------------------------------------- | ------------------------------------- |
+| GET `/api/v1/agent/status`         | 无                                                                  | `{configured:boolean,message:string}` |
+| GET `/api/v1/agent/tasks`          | 无                                                                  | `{items:TaskSummary[]}`，最近 50 个   |
+| POST `/api/v1/agent/tasks/create`  | `{request_id:UUID,message:string}`                                  | `TaskDetail`                          |
+| POST `/api/v1/agent/tasks/detail`  | `{task_id:UUID}`                                                    | `TaskDetail`                          |
+| POST `/api/v1/agent/tasks/message` | `{task_id,request_id:UUID,expected_revision:number,message:string}` | `TaskDetail`                          |
+| POST `/api/v1/agent/tasks/retry`   | `{task_id,expected_revision:number}`                                | `TaskDetail`                          |
+
+`TaskSummary` 包含 `task_id`、`title`、`status`、`revision`、ISO 时间 `create_at` / `update_at`。`TaskDetail` 另有 `messages: {role:'user'|'assistant',content:string}[]`、`spec: DeploymentSpec|null`、`questions:string[]` 和 `error:string|null`。必要结构均在 `features/agent/api.ts` 运行时校验。
+
+`DeploymentSpec` 的目标为 `kubernetes`，包含 `cluster`、`namespace` 和服务列表 `services`。每个服务包含 `kind:'redis'|'postgresql'`、`name`、`version`、正整数 `storage_gi`、固定为 `1` 的 `replicas`。这些是模型整理的规格，尚未通过 MCP 校验环境，也未执行 Pulumi preview/up。
+
+| 状态          | 前端行为                           |
+| ------------- | ---------------------------------- |
+| `queued`      | 每 2 秒查询进度；禁用发送和重试    |
+| `needs_input` | 展示问题，允许补充需求             |
+| `ready`       | 展示规格与“尚未部署”，允许修改需求 |
+| `failed`      | 展示固定失败提示，允许手动重试     |
+
+- 创建和消息正文为 1–4000 字；工作台只发送需求正文，仓库与分支不参加分析。创建返回后即进入详情，不在一个请求内等待模型完成。
+- 创建从 `revision=1` 开始，每次新消息递增；失败重试不增加 revision。编辑开始时记录版本，发送带 `expected_revision`；版本冲突时拉取最新数据、保留输入，由用户查看后再次提交。
+- 创建/消息使用 UUID 幂等键；同一次内容未确认成功时重试复用原键，不进行网络失败后的自动重试。业务操作的 401 会话恢复仍遵守前文认证契约。
+- 查询 key 包含会话世代和用户 ID，详情还包含任务 ID；queued 以外状态或查询出错停止轮询。重新登录、页面恢复或手动刷新重新读取服务端会话，不把断线当成任务失败。
+- 业务码 `11001` 为模型未配置、`11002` 为任务忙、`11003` 为版本冲突、`11004` 为上限、`11005` 为幂等键内容冲突。前端映射固定提示，不直接展示 `error` 或未知异常正文；请求编号可用于排查。
+- 对话和规格按普通文本呈现，保留选择/复制；任务列表、对话和问题有自己的有界滚动区。真实“提交部署”继续禁用。
+
 ## 草稿与异步业务
 
 - 草稿手动保存到当前用户的浏览器存储，按 `user_id` 分区；退出/身份失效清除，未保存编辑不持久化。旧版无用户归属的草稿不迁移。
 - 用户 ID 分区提供界面隔离，不是浏览器数据加密；草稿仅保存非敏感描述，凭据交给后端。
-- 只有后端真正创建并返回任务后，才能进入真实任务列表。尚未提供任务接口时使用明确空态，提交动作保持禁用。
+- 只有后端真正创建并返回任务后，才能进入分析任务列表；查询失败与成功的空列表分别呈现。真实部署提交仍未接入。
 - Pulumi preview/up 分别表示变更预览与更新。审核绑定部署规格、程序与组件版本、依赖锁、配置、目标 stack/state 和预览摘要；执行前后端重新核对，变化时按环境策略重新审核。前端仅呈现服务端权限和动作。
 - Pulumi update plan 不等同于 Terraform 保存计划，也不是事务保证；详细审核与执行约束以同版本后端 README 的“Agent 与 Pulumi 执行规范”为准。
-- 创建/取消等副作用请求需要后端幂等契约，不能因网络失败任意自动重试。进度、事件游标、重连与结果结构待业务设计确定。
+- 部署创建/取消等副作用请求仍需后端幂等契约，不能因网络失败任意自动重试。当前仅轮询分析任务；部署进度、事件游标、重连与结果结构待业务设计确定。
 
 ## 验证
 

@@ -4,6 +4,8 @@ import { Panel } from '../../components/Panel';
 import { IconButton } from '../../components/IconButton';
 import { ApiError } from '../../lib/api/client';
 import { useConnection, type ServiceStatus } from './useConnection';
+import { useAgentStatus } from '../agent/queries';
+import { AgentFeedback } from '../agent/AgentFeedback';
 
 function Service({ value }: { value: ServiceStatus | undefined }) {
   if (!value) return <span className="muted">尚未取得状态</span>;
@@ -20,6 +22,7 @@ function Service({ value }: { value: ServiceStatus | undefined }) {
 }
 export default function ConnectionPage() {
   const connection = useConnection();
+  const agent = useAgentStatus();
   const data = connection.isError ? undefined : connection.data;
   return (
     <div className="page">
@@ -92,6 +95,39 @@ export default function ConnectionPage() {
         />
         <p className="field-help">基础服务可用性用于检查环境；实际资源变更需由部署任务执行。</p>
       </Panel>
+      <Panel
+        title="方案分析服务"
+        actions={
+          <IconButton
+            label="重新检查分析服务"
+            icon={<ReloadOutlined />}
+            loading={agent.isFetching}
+            onClick={() => {
+              void agent.refetch();
+            }}
+          />
+        }
+      >
+        {agent.isFetching && (
+          <p role="status" className="field-help">
+            正在检查分析服务…
+          </p>
+        )}
+        {agent.isError && <AgentFeedback error={agent.error} />}
+        {agent.isSuccess && (
+          <>
+            <Tag color={agent.data.configured ? 'blue' : 'default'}>
+              {agent.data.configured ? '已配置' : '未配置'}
+            </Tag>
+            <span>
+              {agent.data.configured
+                ? '可提交 Redis / PostgreSQL 需求，由 Agent 整理部署规格。'
+                : '请联系管理员配置分析模型后重试。'}
+            </span>
+          </>
+        )}
+        <p className="availability-note">模型配置就绪不代表环境已验证；分析方案不执行资源部署。</p>
+      </Panel>
       <Panel title="待接入功能">
         <Descriptions
           column={1}
@@ -108,10 +144,10 @@ export default function ConnectionPage() {
             },
             {
               key: 'agent',
-              label: 'Agent 与 MCP',
+              label: 'MCP 环境查询',
               children: (
                 <>
-                  <Tag>待接入</Tag>需求分析和环境查询
+                  <Tag>待接入</Tag>真实集群、环境和资源查询
                 </>
               ),
             },

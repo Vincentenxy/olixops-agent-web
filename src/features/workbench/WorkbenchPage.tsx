@@ -3,6 +3,7 @@ import { Alert, Button, Input, Space, Tag } from 'antd';
 import { ArrowRightOutlined, SaveOutlined } from '@ant-design/icons';
 import { Link } from 'react-router';
 import { useAuth } from '../auth/context';
+import { StartAnalysis } from '../agent/StartAnalysis';
 import { Panel } from '../../components/Panel';
 import { emptyDraft, readDraft, removeDraft, saveDraft } from './draft';
 import type { DeploymentDraft, SavedDraft } from './draft';
@@ -68,7 +69,7 @@ export default function WorkbenchPage() {
       <div className="page-heading">
         <div>
           <h1>部署工作台</h1>
-          <p>描述应用和目标环境，准备一次新的部署。</p>
+          <p>用一句话描述 Redis 或 PostgreSQL 需求，先完善 Kubernetes 部署方案。</p>
         </div>
         <Tag>准备阶段</Tag>
       </div>
@@ -91,7 +92,7 @@ export default function WorkbenchPage() {
             <div className="form-row">
               <div className="field">
                 <label htmlFor="repository">
-                  应用仓库 <span className="muted">（可选）</span>
+                  应用仓库 <span className="muted">（可选，仅草稿）</span>
                 </label>
                 <Input
                   id="repository"
@@ -119,7 +120,7 @@ export default function WorkbenchPage() {
                 id="requirement"
                 value={draft.requirement}
                 onChange={(event) => update('requirement', event.target.value)}
-                placeholder="例如：将这个应用部署到测试环境，使用现有 PostgreSQL，先展示资源变更计划。"
+                placeholder="例如：在测试集群的 demo 命名空间部署 Redis 7.4，名称 cache，存储 10 GiB，单副本。"
                 rows={9}
                 maxLength={8000}
                 showCount
@@ -136,6 +137,7 @@ export default function WorkbenchPage() {
                 title={<span role="status">{feedback.text}</span>}
               />
             )}
+            <StartAnalysis message={draft.requirement} />
             <div className="form-actions">
               <Space wrap>
                 <Button htmlType="submit" icon={<SaveOutlined aria-hidden="true" />}>
@@ -158,7 +160,7 @@ export default function WorkbenchPage() {
               </Button>
             </div>
             <div id="deployment-unavailable" className="availability-note">
-              部署服务尚未接入，当前可以编辑和保存需求。<Link to="/settings">查看连接状态</Link>
+              方案分析不会执行部署；实际资源变更尚未接入。<Link to="/settings">查看连接状态</Link>
             </div>
           </form>
         </Panel>
@@ -167,34 +169,34 @@ export default function WorkbenchPage() {
             <li>
               <span>1</span>
               <div>
-                <strong>分析应用</strong>
-                <p>识别运行方式、依赖和部署需求</p>
+                <strong>整理需求</strong>
+                <p>确认服务版本、存储与目标环境</p>
               </div>
             </li>
             <li>
               <span>2</span>
               <div>
-                <strong>生成资源计划</strong>
-                <p>查询环境信息，准备基础设施变更</p>
+                <strong>确认部署规格</strong>
+                <p>补齐问题，生成结构化方案</p>
               </div>
             </li>
             <li>
               <span>3</span>
               <div>
-                <strong>审阅与执行</strong>
-                <p>根据环境策略确认计划并部署</p>
+                <strong>资源预览与部署</strong>
+                <p>待接入环境查询、审核与执行</p>
               </div>
             </li>
             <li>
               <span>4</span>
               <div>
                 <strong>验证结果</strong>
-                <p>检查应用状态，查看日志和访问地址</p>
+                <p>待接入部署日志、状态和访问地址</p>
               </div>
             </li>
           </ol>
           <div className="workflow-note">
-            后续任务会在这里展示实际进度。<Link to="/tasks">进入任务列表 →</Link>
+            当前支持需求分析与补充，后续步骤尚未接入。<Link to="/tasks">查看分析方案 →</Link>
           </div>
         </Panel>
       </div>

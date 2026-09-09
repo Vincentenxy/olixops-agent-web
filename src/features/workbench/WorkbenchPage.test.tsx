@@ -6,6 +6,7 @@ import WorkbenchPage from './WorkbenchPage';
 import { draftKey } from './draft';
 const DRAFT_KEY = draftKey('test-user');
 vi.mock('../auth/context', () => ({ useAuth: () => ({ user: { user_id: 'test-user' } }) }));
+vi.mock('../agent/StartAnalysis', () => ({ StartAnalysis: () => null }));
 
 function renderWorkbench() {
   return render(
