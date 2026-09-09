@@ -17,8 +17,8 @@
 - [x] 认证/竞态/接口/草稿自动化测试、lint 与类型检查通过。
 - [x] 完成本轮全部格式检查与生产构建。
 - [x] 完成本轮真实后端浏览器联调和桌面/窄屏验收。
-- [ ] 完成本轮容器启动与同源 Cookie/登录验收；本地 Docker Hub 授权请求超时，远程 CI 结果另行记录。
-- [ ] 本轮提交后确认远程 CI 结果。
+- [x] 实际 Nginx 模板配合缓存镜像完成本地路由、同源 Cookie 与登录验收；生产镜像启动结果以本轮 CI 为准。
+- [x] [Frontend CI](https://github.com/Vincentenxy/olixops-agent-web/actions/runs/34308320930) 在提交 `26e6fc4` 上全部通过：质量检查、38 项测试、生产镜像构建、容器健康检查、SPA 路由、静态资源 404 和 API 上游路由。
 
 ## 业务待接入
 
@@ -45,8 +45,9 @@
 - 本轮自动化测试：38 项通过，包括 7 项认证页面、17 项会话/竞态/重定向、9 项 API、5 项草稿。验证失败登录、刷新恢复、改密、并发 401、退出等待在途响应、跨账号刷新拒绝及旧请求不重放、阻止旧私有数据返回以及缓存清理。
 - 本轮 `pnpm check` 通过：ESLint、Prettier、TypeScript、38 项 Vitest 与 Vite 生产构建。真实浏览器验证错误/成功登录、刷新恢复、改密后会话失效和新密码登录、退出后刷新保护，以及数据库/Redis/认证/Pulumi 四项正常状态。改密实际写操作通过 HTTP 联调执行，表单提交路径由组件测试覆盖。
 - 历史基线：2026-09-08 的 14 项测试与 1280×720 / 390×844 界面验收通过；该结果不代表本轮认证页面已完成真实联调。
-- 历史 CI：[Frontend CI #1](https://github.com/Vincentenxy/olixops-agent-web/actions/runs/34227479432) 对初始化提交成功构建 Docker 镜像。本轮结果需在提交后另行确认。
+- 历史 CI：[Frontend CI #1](https://github.com/Vincentenxy/olixops-agent-web/actions/runs/34227479432) 对初始化提交成功构建 Docker 镜像。
 - 已接续远程 `c440680` 的 Pulumi 选型更新，保留 preview/up、审核绑定及 update plan 与保存计划差异约定；当时仅文档调整，本轮新增基础能力不代表业务部署已完成。
 
 - 本轮界面验收：1280×720 桌面、390×844 登录与账户页无横向溢出，操作可达；浏览器控制台无 warn/error。
-- 本地容器：PostgreSQL/Redis 实际运行正常；API/Web 构建在 Docker Hub 获取 Python 镜像 token 时超时，尚未完成 Nginx 容器与真实后端 Cookie 联调。CI 已增加静态页面、路由回退和 API 不回退为 SPA 的检查。
+- 本地容器：PostgreSQL/Redis 实际运行正常；完整应用构建受 Docker Hub 获取 Python 镜像 token 超时影响。使用缓存 Nginx 1.27.5 镜像和本项目实际模板，验证健康检查 200、SPA 路由 200、缺失静态资源 404、不可用 API 上游 502；再代理真实后端完成登录、身份/状态查询、Cookie 刷新、退出及退出后 Bearer/Cookie 均拒绝。临时验证容器已删除。此结果验证模板与代理集成，生产镜像运行以 CI 为准。
+- [首次基础能力 CI](https://github.com/Vincentenxy/olixops-agent-web/actions/runs/34307173544) 的质量检查和生产镜像构建通过，启动健康探测因连接重置返回 curl 56；已为启动探测补充所有错误重试、时间上限和失败日志，后续路径状态断言保留。
