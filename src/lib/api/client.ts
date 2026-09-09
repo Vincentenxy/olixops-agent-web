@@ -16,8 +16,9 @@ export class ApiError extends Error {
   }
 }
 
-interface RequestOptions<T> {
+export interface RequestOptions<T> {
   method?: 'GET' | 'POST';
+  auth?: 'required' | 'optional' | 'none';
   body?: unknown;
   signal?: AbortSignal;
   parse: (data: unknown) => T;
@@ -46,14 +47,16 @@ export function createApiClient(getToken: () => string | undefined = () => undef
     }
     const headers = new Headers({
       Accept: 'application/json',
+      'X-Olixops-Client': 'web',
       'X-Request-Id': Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) =>
         byte.toString(16).padStart(2, '0'),
       ).join(''),
     });
-    if (!path.startsWith('/api/v1/pub/')) {
+    const auth = options.auth ?? (path.startsWith('/api/v1/pub/') ? 'none' : 'required');
+    if (auth !== 'none') {
       const token = getToken();
-      if (!token) throw new ApiError('请先完成登录认证', 401, 401);
-      headers.set('Authorization', `Bearer ${token}`);
+      if (!token && auth === 'required') throw new ApiError('请先完成登录认证', 401, 401);
+      if (token) headers.set('Authorization', `Bearer ${token}`);
     }
     if (options.body !== undefined) {
       if (options.method !== 'POST') throw new ApiError('带参数的请求必须使用 POST');
@@ -70,7 +73,7 @@ export function createApiClient(getToken: () => string | undefined = () => undef
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: controller.signal,
-        credentials: 'omit',
+        credentials: 'same-origin',
         redirect: 'error',
       });
       const requestId = response.headers.get('X-Request-Id') ?? undefined;

@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import WorkbenchPage from './WorkbenchPage';
-import { DRAFT_KEY } from './draft';
+import { draftKey } from './draft';
+const DRAFT_KEY = draftKey('test-user');
+vi.mock('../auth/context', () => ({ useAuth: () => ({ user: { user_id: 'test-user' } }) }));
 
 function renderWorkbench() {
   return render(

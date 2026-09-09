@@ -488,3 +488,96 @@ h1 {
     transition-duration: 0.01ms !important;
   }
 }
+.auth-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  overflow: auto;
+}
+.auth-panel {
+  width: min(100%, 400px);
+  padding: 28px;
+  background: #fff;
+  border: 1px solid #e2e7f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #1d355a;
+  font-size: 19px;
+  font-weight: 600;
+}
+.auth-brand .anticon {
+  color: #2563eb;
+  font-size: 23px;
+}
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.auth-panel .field-help,
+.auth-form .field-help {
+  margin: 0;
+}
+.account-form {
+  max-width: 460px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+.user-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session-loading {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #657289;
+}
+.service-status {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.service-status .ant-tag {
+  flex-shrink: 0;
+}
+@media (max-width: 720px) {
+  .workspace-title {
+    display: none;
+  }
+  .header-actions {
+    width: 100%;
+    gap: 10px;
+  }
+  .header-actions .connection-link {
+    margin-right: auto;
+  }
+  .user-link {
+    max-width: 120px;
+  }
+  .sidebar nav a {
+    gap: 5px;
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+}

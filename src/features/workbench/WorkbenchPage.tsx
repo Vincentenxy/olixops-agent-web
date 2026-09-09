@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { Alert, Button, Input, Space, Tag } from 'antd';
 import { ArrowRightOutlined, SaveOutlined } from '@ant-design/icons';
 import { Link } from 'react-router';
+import { useAuth } from '../auth/context';
 import { Panel } from '../../components/Panel';
 import { emptyDraft, readDraft, removeDraft, saveDraft } from './draft';
 import type { DeploymentDraft, SavedDraft } from './draft';
 
-function initialState() {
+function initialState(userId: string) {
   try {
-    const saved = readDraft();
+    const saved = readDraft(userId);
     return { draft: saved?.draft ?? emptyDraft, saved, error: '' };
   } catch {
     return {
@@ -20,7 +21,10 @@ function initialState() {
 }
 
 export default function WorkbenchPage() {
-  const [initial] = useState(initialState);
+  const { user } = useAuth();
+  if (!user) throw new Error('Authenticated user required');
+  const userId = user.user_id;
+  const [initial] = useState(() => initialState(userId));
   const [draft, setDraft] = useState<DeploymentDraft>(initial.draft);
   const [saved, setSaved] = useState<SavedDraft | null>(initial.saved);
   const [feedback, setFeedback] = useState({ text: initial.error, error: !!initial.error });
@@ -31,7 +35,7 @@ export default function WorkbenchPage() {
   }
   function save() {
     try {
-      setSaved(saveDraft(draft));
+      setSaved(saveDraft(userId, draft));
       setFeedback({ text: '草稿已保存在当前浏览器', error: false });
     } catch (error) {
       setFeedback({
@@ -51,7 +55,7 @@ export default function WorkbenchPage() {
   }
   function clear() {
     try {
-      removeDraft();
+      removeDraft(userId);
       setSaved(null);
       setDraft(emptyDraft);
       setFeedback({ text: '本地草稿已清空', error: false });
@@ -123,7 +127,7 @@ export default function WorkbenchPage() {
               />
             </div>
             <p id="draft-hint" className="field-help">
-              仅保存非敏感需求。请勿填写密码、访问令牌或云密钥；草稿只保存在当前浏览器。
+              仅保存非敏感需求。请勿填写密码、访问令牌或云密钥；草稿按当前账号保存在此浏览器，退出登录时清除。
             </p>
             {feedback.text && (
               <Alert

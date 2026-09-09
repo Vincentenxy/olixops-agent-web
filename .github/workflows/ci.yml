@@ -30,3 +30,13 @@ jobs:
         run: pnpm check
       - name: Build container
         run: docker build -t olixops-agent-web:ci .
+      - name: Verify static container and API routing
+        run: |
+          docker run -d --name olixops-web-ci -p 127.0.0.1:8080:80 -e API_UPSTREAM=http://127.0.0.1:9 olixops-agent-web:ci
+          curl --retry 10 --retry-connrefused --retry-delay 1 --fail http://127.0.0.1:8080/healthz
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/account)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/assets/missing.js)" = 404
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/api/v1/pub/health)" = 502
+      - name: Stop verification container
+        if: always()
+        run: docker rm -f olixops-web-ci || true

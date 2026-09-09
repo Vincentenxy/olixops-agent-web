@@ -1,4 +1,7 @@
-export const DRAFT_KEY = 'olixops:deployment-draft:v1';
+const LEGACY_DRAFT_KEY = 'olixops:deployment-draft:v1';
+export function draftKey(userId: string) {
+  return `olixops:deployment-draft:v2:${encodeURIComponent(userId)}`;
+}
 export interface DeploymentDraft {
   repository: string;
   revision: string;
@@ -27,8 +30,8 @@ function isDraft(value: unknown): value is DeploymentDraft {
   );
 }
 
-export function readDraft(): SavedDraft | null {
-  const raw = localStorage.getItem(DRAFT_KEY);
+export function readDraft(userId: string): SavedDraft | null {
+  const raw = localStorage.getItem(draftKey(userId));
   if (!raw) return null;
   const value: unknown = JSON.parse(raw);
   if (
@@ -61,15 +64,16 @@ export function validateDraft(draft: DeploymentDraft): string | null {
   return null;
 }
 
-export function saveDraft(draft: DeploymentDraft): SavedDraft {
+export function saveDraft(userId: string, draft: DeploymentDraft): SavedDraft {
   if (!isDraft(draft)) throw new Error('草稿内容超出长度限制');
   const error = validateDraft(draft);
   if (error) throw new Error(error);
   const saved: SavedDraft = { version: 1, savedAt: new Date().toISOString(), draft };
-  localStorage.setItem(DRAFT_KEY, JSON.stringify(saved));
+  localStorage.setItem(draftKey(userId), JSON.stringify(saved));
   return saved;
 }
 
-export function removeDraft() {
-  localStorage.removeItem(DRAFT_KEY);
+export function removeDraft(userId: string) {
+  localStorage.removeItem(draftKey(userId));
+  localStorage.removeItem(LEGACY_DRAFT_KEY);
 }

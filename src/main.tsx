@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import App from './app/App';
+import { AuthProvider } from './features/auth/AuthProvider';
 import 'antd/dist/reset.css';
 import './app/styles.css';
 
@@ -27,9 +28,11 @@ createRoot(root).render(
       }}
     >
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </AuthProvider>
       </QueryClientProvider>
     </ConfigProvider>
   </StrictMode>,

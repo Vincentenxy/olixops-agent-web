@@ -1,89 +1,88 @@
 # olixops-agent-web
 
-`olixops-agent` 的独立 Web 控制台，围绕自然语言需求、部署任务和 Pulumi 变更构建操作工作区。
+`olixops-agent` 的独立 Web 控制台。使用 React + TypeScript + Vite SPA，配合 FastAPI 后端提供本地用户登录、账户管理、基础服务检查和部署需求草稿。
 
-前端采用 React + TypeScript + Vite SPA，后端独立使用 FastAPI。控制台以登录后的交互操作为主，当前无需 SSR；前端交付静态资源，Agent 编排和 Pulumi 执行保留在后端。
+基础设施执行方案为 **Pulumi**。当前提供登录与平台基础能力，Agent、MCP 查询、真实部署任务和 Pulumi 资源变更工作流等待业务设计；“提交部署”保持禁用。
 
-## 当前范围
+## 当前页面
 
-本轮初始化提供中文紧凑工作台、需求草稿、任务未接入空态和连接状态入口。真实任务创建、MCP 查询、Pulumi preview/up（变更预览/更新）和部署结果尚未接入；“提交部署”保持禁用，健康检查通过也不会启用。
+| 路径        | 行为                                                      |
+| ----------- | --------------------------------------------------------- |
+| `/login`    | 用户名/密码登录、错误反馈；已有会话时恢复登录             |
+| `/`         | 受保护工作台；手动保存、恢复、清空当前用户的需求草稿      |
+| `/tasks`    | 受保护的任务未接入空态                                    |
+| `/settings` | 受保护的真实数据库、Redis、认证与 Pulumi SDK/CLI 状态检查 |
+| `/account`  | 账户身份、修改密码；成功后退出所有会话并重新登录          |
+| 其他路径    | 登录后显示 404 与返回工作台入口                           |
 
-| 路径        | 当前行为                                                                       |
-| ----------- | ------------------------------------------------------------------------------ |
-| `/`         | 编辑部署需求、可选的 HTTPS 仓库地址与分支/版本；手动保存、恢复和清空浏览器草稿 |
-| `/tasks`    | 显示任务服务尚未接入的空态                                                     |
-| `/settings` | 实际调用后端健康接口，展示检查状态、失败请求编号和各功能待接入项，可手动刷新   |
-| 其他路径    | 显示 404 与返回工作台入口                                                      |
+刷新页面时使用后端 HttpOnly Cookie 恢复会话，访问令牌仅保留内存。受保护请求遇到 401 时合并并发刷新并最多重试一次；403 保持权限错误。退出会清空内存令牌、查询缓存与当前用户草稿，并调用后端撤销会话。
 
-草稿保存在当前浏览器的 `localStorage`，只允许非敏感需求。保存会检查需求非空、内容长度以及仓库 URL；仓库地址使用 HTTPS，且不能包含凭据、查询参数或片段。草稿没有自动保存或跨设备同步，默认分支为 `main`。
-
-后端同步初始化最小 FastAPI 服务，提供 `GET /api/v1/pub/health`、统一错误响应和 `X-Request-Id`。健康检查成功表示 API 可访问，不表示端到端部署已经完成。
+草稿按后端 `user_id` 隔离存入浏览器 `localStorage`，仅允许非敏感需求，退出或会话失效时清除。旧版没有所属用户的草稿不会迁入任何账号。仓库 URL 必须使用 HTTPS，且不含凭据、查询参数或片段；默认分支为 `main`。
 
 ## 技术栈
 
-| 组件       | 选型与用途                                  |
-| ---------- | ------------------------------------------- |
-| 运行环境   | Node.js 24（本地基线 24.1.0），pnpm 10.11.1 |
-| UI         | React 19.2.8 + TypeScript 6.0.3             |
-| 开发与构建 | Vite 8.2.2                                  |
-| 页面路由   | React Router 8.3.1                          |
-| 服务端数据 | TanStack Query 5.102.8                      |
-| 控制台组件 | Ant Design 6.6.3 + Ant Design Icons         |
-| 后端       | 独立的 `olixops-agent` FastAPI 服务         |
+| 组件              | 选型                                             |
+| ----------------- | ------------------------------------------------ |
+| 运行环境          | Node.js 24（本地基线 24.1.0），pnpm 10.11.1      |
+| UI                | React 19.2.8、TypeScript 6.0.3、Ant Design 6.6.3 |
+| 开发与构建        | Vite 8.2.2                                       |
+| 路由 / 服务端数据 | React Router 8.3.1 / TanStack Query 5.102.8      |
+| 后端 / IaC        | 独立 FastAPI 服务 / Pulumi Automation API        |
 
-当前版本记录随依赖变更更新，精确声明以 [package.json](package.json)、[pnpm-lock.yaml](pnpm-lock.yaml) 和 [.node-version](.node-version) 为准。提交锁文件，CI 与可重复安装使用 `--frozen-lockfile`。
+精确依赖以 [package.json](package.json)、[pnpm-lock.yaml](pnpm-lock.yaml) 和 [.node-version](.node-version) 为准；CI 安装使用 `--frozen-lockfile`。
 
-## 本地开发
+## 本地启动与登录
 
-使用 Node.js 24 与项目指定版本的 pnpm，在本仓库执行：
+1. 先按后端 `olixops-agent/README.md` 完成数据库迁移、签名密钥和本地用户初始化，并启动 API。当前没有默认公开密码或前端注册入口。
+2. 在前端仓库执行：
 
 ```bash
 pnpm install --frozen-lockfile
-pnpm dev
+pnpm dev --port 5175 --strictPort
 ```
 
-开发服务地址以终端输出为准。前端可独立打开；真实连接检查需要另行启动后端。后端运行方式见 `olixops-agent` 仓库的 README。
+3. 打开 `http://127.0.0.1:5175`，输入后端创建的用户名和密码。进入“连接与配置”检查基础服务，进入“账户设置”验证改密与重新登录。
 
-浏览器固定请求当前站点的 `/api`。Vite 开发代理默认转发到 `http://127.0.0.1:8000`；需要其他后端地址时，通过 shell 设置：
+浏览器始终请求同源 `/api`。开发代理默认转发 `http://127.0.0.1:8000`，其他目标通过 shell 设置：
 
 ```bash
-API_PROXY_TARGET=http://127.0.0.1:8001 pnpm dev
+API_PROXY_TARGET=http://127.0.0.1:8001 pnpm dev --port 5175 --strictPort
 ```
 
-[.env.example](.env.example) 记录这个用法；当前配置直接读取 shell 的 `API_PROXY_TARGET`，复制为 `.env` 不会自动改变代理。代理设置见 [vite.config.ts](vite.config.ts)。页面上的连接入口用于查看状态，不会修改 API 目标。
+[.env.example](.env.example) 记录用法；当前 [Vite 配置](vite.config.ts) 读取 shell 变量，复制 `.env` 不会自动改变代理。浏览器地址的 Origin 必须在后端认证允许列表中；本地默认允许 127.0.0.1/localhost 的 5173、5175 端口，其他地址需同步配置后端。代理不改写浏览器 Origin。
 
-当前未使用 `VITE_*` 变量或持久化登录 token。以后增加的 `VITE_*` 变量会成为浏览器可读取的公开配置；云密钥、JWT 签名密钥和 Pulumi 凭据交给后端管理。API 封装预留内存 token provider，登录来源与会话流程仍待接入。
+`VITE_*`、浏览器包和静态资源均属于公开配置，不能放密码、签名私钥或 Pulumi/云凭据。后端断开时登录或状态检查显示真实错误，不使用模拟登录绕过。
 
-## 构建与验证
+## 检查与构建
 
-| 命令                                | 用途                                          |
-| ----------------------------------- | --------------------------------------------- |
-| `pnpm dev`                          | 启动本地开发服务                              |
-| `pnpm lint`                         | ESLint 检查，警告视为失败                     |
-| `pnpm format:check` / `pnpm format` | Prettier 格式检查 / 写入格式化                |
-| `pnpm typecheck`                    | TypeScript 类型检查                           |
-| `pnpm test` / `pnpm test:watch`     | Vitest 单次运行 / 监听                        |
-| `pnpm build`                        | 类型检查后构建静态产物                        |
-| `pnpm preview`                      | 预览已有构建产物                              |
-| `pnpm check`                        | 依次运行 lint、格式检查、类型检查、测试与构建 |
+| 命令                                | 用途                         |
+| ----------------------------------- | ---------------------------- |
+| `pnpm dev`                          | 本地开发                     |
+| `pnpm lint`                         | ESLint，警告视为失败         |
+| `pnpm format:check` / `pnpm format` | Prettier 检查 / 写入格式化   |
+| `pnpm typecheck`                    | TypeScript 检查              |
+| `pnpm test` / `pnpm test:watch`     | Vitest 单次 / 监听           |
+| `pnpm build`                        | 类型检查及静态生产构建       |
+| `pnpm preview`                      | 本地预览构建产物             |
+| `pnpm check`                        | lint、格式、类型、测试、构建 |
 
-生产构建输出为 `dist/`。`pnpm preview` 用于本地预览，沿用 Vite 的 `/api` 代理配置；生产环境使用静态托管或 Nginx 容器并配置实际 API 转发。
+生产输出为 `dist/`。自动化测试覆盖认证路由、错误登录、刷新恢复、并发 401、退出竞态、缓存/草稿清理、密码更新，以及统一 API 与草稿交互。浏览器和真实后端联调结果单独记录在 [todo.md](todo.md)。
 
-前端需要验证页面加载、草稿操作、路由切换、连接失败与真实健康检查。后端尚未实现的业务接口保持未连接/空态，测试数据不作为实际部署记录展示。
+## 容器部署
 
-## 部署边界
+[Dockerfile](Dockerfile) 使用 Node 构建、Nginx 托管。启动时官方 Nginx entrypoint 对 [配置模板](deploy/nginx.conf.template) 执行 envsubst，过滤器仅替换 `API_UPSTREAM`，保留 `$uri` 等 Nginx 变量。
 
-- 已提供 [Dockerfile](Dockerfile)，使用 Node 构建、Nginx 托管；[Nginx 配置](deploy/nginx.conf) 对页面路径提供 `index.html` 回退，`/assets/` 使用静态资源缓存。
-- 容器的 `/healthz` 只验证静态站点可用。当前 `/api/` 固定返回统一 HTTP 503，等待环境配置真实反向代理；API 路径不会被 SPA 回退吞成 HTML。
-- 生产 API 的同源反向代理与集群入口由部署配置确定；构建前端不会启动 FastAPI、Agent 或 Pulumi Worker。
-- 后续接入的 Worker 应在后端持续执行任务；用户关闭页面后，重新进入应通过任务 ID 读取真实进度。
-- Docker 生产代理、集群入口与任务流协议等接入事项记录在 [todo.md](todo.md)。
+- `API_UPSTREAM` 默认 `http://api:8000`，可在容器环境变量中改为实际 API 根地址，不加路径前缀。
+- `/api/` 转发真实后端并透传 Cookie、Authorization 和请求 ID；不会回退成 SPA HTML，也不返回模拟结果。
+- `/healthz` 仅检查静态站点；页面路径回退到 `index.html`，`/assets/` 使用不可变缓存。
+- Nginx 转发当前 Host，并以当前连接重建 `X-Forwarded-For` / `X-Forwarded-Proto`。生产 TLS 终止、可信代理范围、Cookie Secure 与认证 Origin 允许列表由部署环境配置。
+- 后端 Compose 的 `app` profile 可构建相邻前端仓库并提供同源入口；具体命令和首次账号创建见后端 README。
 
-## 开发规范与后续工作
+## 开发规范
 
-- [AGENTS.md](AGENTS.md)：开发入口与按任务类型读取的规范。
-- [UI 开发规范](docs/ui-development-standards.md)：完整项目内副本，适用于 UI 实现和评审。
-- [前端开发与接口契约](docs/frontend-development.md)：组件/状态边界、统一响应、JWT、请求 ID 与异步任务约定。
-- [todo.md](todo.md)：基础能力清单、待接入功能、未决事项及当前行为。
+- [AGENTS.md](AGENTS.md)：按任务类型读取开发规范。
+- [UI 开发规范](docs/ui-development-standards.md)：完整项目内副本，适用于页面和交互实现。
+- [前端接口契约](docs/frontend-development.md)：认证、请求、状态与业务边界。
+- [todo.md](todo.md)：待接入业务、运行条件及验证记录。
 
-接口契约来源于后端 `olixops-agent/README.md`；对接时同步核对后端实际 OpenAPI。界面、协议或运行方式发生变化时，同步更新对应文档。
+协议变更需同时更新请求解析、测试与文档，并与后端实际 OpenAPI 核对。

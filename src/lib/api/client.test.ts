@@ -25,7 +25,8 @@ describe('API client contract', () => {
     await expect(client(publicPath, { parse: parseHealth })).resolves.toEqual({ status: 'ok' });
     const options = fetchMock.mock.calls[0]?.[1] as RequestInit;
     expect(new Headers(options.headers).has('Authorization')).toBe(false);
-    expect(options.credentials).toBe('omit');
+    expect(options.credentials).toBe('same-origin');
+    expect(new Headers(options.headers).get('X-Olixops-Client')).toBe('web');
   });
 
   it('stops protected requests before network access when unauthenticated', async () => {
