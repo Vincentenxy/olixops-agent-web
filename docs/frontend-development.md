@@ -8,7 +8,7 @@
 - `features/auth/session.ts` 负责内存身份、认证请求、恢复/刷新与会话失效；`AuthProvider` 桥接 React 并在会话世代变化时清空 QueryClient。组件不能自行拼接 token 或持久化会话。
 - `lib/api/client.ts` 负责传输、超时/取消、请求 ID 与统一 envelope；受保护请求通过 `session.request` 执行。外部数据需运行时解析，类型断言不能代替验证。
 - 页面编辑状态留在组件，查询缓存按会话世代和用户 ID 分区；URL 表达页面位置。身份变更重新挂载受保护页面，旧请求返回值不进入新会话。
-- 后端已提供 Pulumi 基础集成与持久 LangGraph 方案分析；MCP 查询、业务部署 Worker 待接入。页面关闭或请求取消不能推断为分析任务或部署取消/失败。
+- 后端已提供持久 LangGraph 方案分析；MCP 查询、业务部署 Worker 待接入。业务开发暂不使用 Pulumi，已有基础集成与诊断保持。页面关闭或请求取消不能推断为分析任务或部署取消/失败。
 
 ## API 传输
 
@@ -83,7 +83,7 @@ HTTP 200 仍必须检查 `code`；非 JSON、无效 envelope、结构不匹配�
 
 `TaskSummary` 包含 `task_id`、`title`、`status`、`revision`、ISO 时间 `create_at` / `update_at`。`TaskDetail` 另有 `messages: {role:'user'|'assistant',content:string}[]`、`spec: DeploymentSpec|null`、`questions:string[]` 和 `error:string|null`。必要结构均在 `features/agent/api.ts` 运行时校验。
 
-`DeploymentSpec` 的目标为 `kubernetes`，包含 `cluster`、`namespace` 和服务列表 `services`。每个服务包含 `kind:'redis'|'postgresql'`、`name`、`version`、正整数 `storage_gi`、固定为 `1` 的 `replicas`。这些是模型整理的规格，尚未通过 MCP 校验环境，也未执行 Pulumi preview/up。
+`DeploymentSpec` 的目标为 `kubernetes`，包含 `cluster`、`namespace` 和服务列表 `services`。每个服务包含 `kind:'redis'|'postgresql'`、`name`、`version`、正整数 `storage_gi`、固定为 `1` 的 `replicas`。这些是模型整理的规格，尚未通过 MCP 校验环境，也未预览或部署真实资源。
 
 | 状态          | 前端行为                           |
 | ------------- | ---------------------------------- |
@@ -104,9 +104,8 @@ HTTP 200 仍必须检查 `code`；非 JSON、无效 envelope、结构不匹配�
 - 草稿手动保存到当前用户的浏览器存储，按 `user_id` 分区；退出/身份失效清除，未保存编辑不持久化。旧版无用户归属的草稿不迁移。
 - 用户 ID 分区提供界面隔离，不是浏览器数据加密；草稿仅保存非敏感描述，凭据交给后端。
 - 只有后端真正创建并返回任务后，才能进入分析任务列表；查询失败与成功的空列表分别呈现。真实部署提交仍未接入。
-- Pulumi preview/up 分别表示变更预览与更新。审核绑定部署规格、程序与组件版本、依赖锁、配置、目标 stack/state 和预览摘要；执行前后端重新核对，变化时按环境策略重新审核。前端仅呈现服务端权限和动作。
-- Pulumi update plan 不等同于 Terraform 保存计划，也不是事务保证；详细审核与执行约束以同版本后端 README 的“Agent 与 Pulumi 执行规范”为准。
-- 部署创建/取消等副作用请求仍需后端幂等契约，不能因网络失败任意自动重试。当前仅轮询分析任务；部署进度、事件游标、重连与结果结构待业务设计确定。
+- 后续发布按 [Redis 开发计划](../../olixops-agent/design/redis-development-plan.md)（[远程正文](https://github.com/Vincentenxy/olixops-agent/blob/main/design/redis-development-plan.md)）推进：前端阶段 5 接入固定参数发布，阶段 6 对话复用同一接口。实例、不可变配置版本和部署任务是不同对象；页面展示后端绑定的配置版本与 Git commit，Git 保存成功不能当作资源部署成功。
+- 部署创建/取消等副作用请求仍需后端幂等契约，不能因网络失败任意自动重试。当前仅轮询分析任务；首期部署进度采用轮询，状态与重试契约随阶段 3/4 确定，取消、事件游标和重连策略按实际支持范围呈现。前端仅呈现服务端权限和动作。
 
 ## 验证
 

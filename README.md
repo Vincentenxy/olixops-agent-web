@@ -2,7 +2,9 @@
 
 `olixops-agent` 的独立 Web 控制台。使用 React + TypeScript + Vite SPA，配合 FastAPI 后端提供本地用户登录、账户管理、基础服务检查、需求草稿与 LangGraph 方案分析。
 
-基础设施执行方案为 **Pulumi**。当前 Agent 可将 Redis / PostgreSQL 需求整理为 Kubernetes 部署规格，支持补充信息、修改方案和恢复分析会话。MCP 环境查询、真实部署任务和 Pulumi 资源变更工作流尚未接入；“提交部署”保持禁用。
+当前 Agent 可将 Redis / PostgreSQL 需求整理为 Kubernetes 部署规格，支持补充信息、修改方案和恢复分析会话。MCP 环境查询和真实部署任务尚未接入；“提交部署”保持禁用。
+
+用户确认的后续开发路线见 [Redis 开发计划](../olixops-agent/design/redis-development-plan.md)（[独立检出入口](https://github.com/Vincentenxy/olixops-agent/blob/main/design/redis-development-plan.md)）：先验证集群与固定参数模板，再接 Git 配置版本、独立 kubectl Worker、前端发布和自然语言入口。**业务开发暂不使用 Pulumi**，现有代码、依赖及 SDK/CLI 状态诊断保留。前端阶段与接入条件记录在 [todo.md](todo.md)。
 
 ## 当前页面
 
@@ -30,13 +32,13 @@
 
 ## 技术栈
 
-| 组件              | 选型                                             |
-| ----------------- | ------------------------------------------------ |
-| 运行环境          | Node.js 24（本地基线 24.1.0），pnpm 10.11.1      |
-| UI                | React 19.2.8、TypeScript 6.0.3、Ant Design 6.6.3 |
-| 开发与构建        | Vite 8.2.2                                       |
-| 路由 / 服务端数据 | React Router 8.3.1 / TanStack Query 5.102.8      |
-| 后端 / IaC        | 独立 FastAPI 服务 / Pulumi Automation API        |
+| 组件              | 选型                                                           |
+| ----------------- | -------------------------------------------------------------- |
+| 运行环境          | Node.js 24（本地基线 24.1.0），pnpm 10.11.1                    |
+| UI                | React 19.2.8、TypeScript 6.0.3、Ant Design 6.6.3               |
+| 开发与构建        | Vite 8.2.2                                                     |
+| 路由 / 服务端数据 | React Router 8.3.1 / TanStack Query 5.102.8                    |
+| 后端 / 部署规划   | 独立 FastAPI 服务 / Git + Kustomize + kubectl Worker（待接入） |
 
 精确依赖以 [package.json](package.json)、[pnpm-lock.yaml](pnpm-lock.yaml) 和 [.node-version](.node-version) 为准；CI 安装使用 `--frozen-lockfile`。
 
@@ -96,6 +98,7 @@ API_PROXY_TARGET=http://127.0.0.1:8001 pnpm dev --port 5175 --strictPort
 ## 开发规范
 
 - [AGENTS.md](AGENTS.md)：按任务类型读取开发规范。
+- [Redis 开发计划](../olixops-agent/design/redis-development-plan.md)（[远程正文](https://github.com/Vincentenxy/olixops-agent/blob/main/design/redis-development-plan.md)）：后续 AI 按阶段实施的唯一计划正文。
 - [UI 开发规范](docs/ui-development-standards.md)：完整项目内副本，适用于页面和交互实现。
 - [前端接口契约](docs/frontend-development.md)：认证、请求、状态与业务边界。
 - [todo.md](todo.md)：待接入业务、运行条件及验证记录。
